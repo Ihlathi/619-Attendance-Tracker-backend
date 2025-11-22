@@ -20,7 +20,7 @@ const Service = {
         const user = getOrProvisionUser(targetEmail);
 
         // Update role
-        updateRow(DB_CONFIG.SHEET_NAMES.USERS, user.email, { role: newRole });
+        updateRow(DB_CONFIG.SHEET_NAMES.USERS, user.email, { role: newRole }, 'email');
         return { email: user.email, role: newRole };
     },
 

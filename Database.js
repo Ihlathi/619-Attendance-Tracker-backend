@@ -75,15 +75,18 @@ function findOne(sheetName, predicate) {
 
 /**
  * Updates a row based on a unique ID.
- * Assumes 'id' is a column.
+ * @param {string} sheetName
+ * @param {string|number} id - The value to search for
+ * @param {Object} updates - Key-value pairs to update
+ * @param {string} [idColumnName='id'] - The name of the column to search in (default: 'id')
  */
-function updateRow(sheetName, id, updates) {
+function updateRow(sheetName, id, updates, idColumnName = 'id') {
   const sheet = getSheet(sheetName);
   const data = sheet.getDataRange().getValues();
   const headers = data[0];
-  const idIndex = headers.indexOf('id');
+  const idIndex = headers.indexOf(idColumnName);
 
-  if (idIndex === -1) throw new Error('No "id" column found in ' + sheetName);
+  if (idIndex === -1) throw new Error('No "' + idColumnName + '" column found in ' + sheetName);
 
   for (let i = 1; i < data.length; i++) {
     if (data[i][idIndex] == id) {
