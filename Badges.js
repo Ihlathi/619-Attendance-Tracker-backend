@@ -63,12 +63,12 @@ const Badges = {
         const requests = pending.map(badge => {
             // Generate Prompt
             const randomWords = [];
-            for (let i = 0; i < 5; i++) {
+            for (let i = 0; i < 5; i++) { // had to limit to 5 words to avoid the banana complaining, may change
                 randomWords.push(wordList[Math.floor(Math.random() * wordList.length)]);
             }
             const wordString = randomWords.join(' ');
             // This wrapper creates a sentence structure so the API accepts the list
-            const fullPrompt = "A cohesive art piece inspired by: " + wordString;
+            const fullPrompt = "A cohesive art piece inspired by: " + wordString; // TODO: Make this more dynamic and figure out how to failsafe complaining nanobanana
 
             // Store prompt on badge object for later use
             badge.generatedPrompt = fullPrompt;
@@ -191,7 +191,7 @@ function getWordList() {
     } catch (e) {
         console.error('Failed to fetch word list: ' + e.message);
         // Fallback list
-        return ['robot', 'future', 'tech', 'space', 'cyber', 'data', 'code', 'mech', 'gear', 'volt'];
+        return ['robot', 'future', 'tech', 'space', 'cyber', 'data', 'code', 'mech', 'gear', 'volt']; // change this to a better fallback
     }
 }
 
