@@ -17,6 +17,19 @@ function setup() {
             if (headers) {
                 sheet.appendRow(headers);
             }
+        } else {
+            // Optional: Update headers if they changed?
+            // For now, assume manual migration if needed, or just append new columns manually.
+            // But we can check if headers match and append missing ones.
+            const currentHeaders = sheet.getRange(1, 1, 1, sheet.getLastColumn()).getValues()[0];
+            const newHeaders = SCHEMA[key];
+            newHeaders.forEach(h => {
+                if (!currentHeaders.includes(h)) {
+                    sheet.getRange(1, currentHeaders.length + 1).setValue(h);
+                    // Update currentHeaders to avoid index issues if multiple added
+                    currentHeaders.push(h);
+                }
+            });
         }
     });
 
@@ -26,7 +39,7 @@ function setup() {
         const adminEmail = 'admin@' + AUTH_CONFIG.ALLOWED_DOMAIN;
         const adminUser = {
             email: adminEmail,
-            role: ROLES.ELEVATED,
+            role: ROLES.ADMIN,
             name: 'System Admin',
             createdAt: new Date().toISOString()
         };

@@ -7,7 +7,9 @@ const DB_CONFIG = {
   SHEET_NAMES: {
     USERS: 'Users',
     MEETINGS: 'Meetings',
-    CHECKINS: 'CheckIns'
+    CHECKINS: 'CheckIns',
+    BADGES: 'Badges',
+    EXCUSES: 'Excuses'
   }
 };
 
@@ -96,6 +98,29 @@ function updateRow(sheetName, id, updates, idColumnName = 'id') {
           sheet.getRange(i + 1, colIndex + 1).setValue(updates[header]);
         }
       });
+      return true;
+    }
+  }
+  return false;
+}
+
+/**
+ * Deletes a row based on a unique ID.
+ * @param {string} sheetName
+ * @param {string|number} id
+ * @param {string} [idColumnName='id']
+ */
+function deleteRow(sheetName, id, idColumnName = 'id') {
+  const sheet = getSheet(sheetName);
+  const data = sheet.getDataRange().getValues();
+  const headers = data[0];
+  const idIndex = headers.indexOf(idColumnName);
+
+  if (idIndex === -1) throw new Error('No "' + idColumnName + '" column found in ' + sheetName);
+
+  for (let i = 1; i < data.length; i++) {
+    if (data[i][idIndex] == id) {
+      sheet.deleteRow(i + 1);
       return true;
     }
   }

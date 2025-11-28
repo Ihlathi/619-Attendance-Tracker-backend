@@ -79,10 +79,19 @@ function checkPermission(userEmail, requiredRole) {
     const user = getOrProvisionUser(userEmail);
     const userRole = user.role;
 
-    if (userRole === ROLES.ELEVATED) return true; // Elevated can do anything
+    // Admin can do anything
+    if (userRole === ROLES.ADMIN) return true;
 
-    // If required role is STANDARD, both Elevated and Standard pass
-    if (requiredRole === ROLES.STANDARD && (userRole === ROLES.ELEVATED || userRole === ROLES.STANDARD)) return true;
+    // Elevated can do anything except Admin-only things (if any specific check is needed, but generally Elevated covers most)
+    // However, if the required role is ADMIN, Elevated fails.
+    if (requiredRole === ROLES.ADMIN) {
+        return userRole === ROLES.ADMIN;
+    }
+
+    if (userRole === ROLES.ELEVATED) return true;
+
+    // If required role is STANDARD, everyone passes
+    if (requiredRole === ROLES.STANDARD) return true;
 
     return false;
 }

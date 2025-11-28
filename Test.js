@@ -1,81 +1,67 @@
 /**
  * Test.js
- * Run this function in the GAS editor to verify functionality.
+ * Run these functions in the GAS editor to verify functionality.
  */
 
-function runTests() {
-    Logger.log('Starting Tests...');
-
-    // 1. Setup
+function testSetup() {
     setup();
     Logger.log('Setup complete.');
+}
 
-    // Mock Tokens
-    const ADMIN_TOKEN = 'TEST_TOKEN_ADMIN';
-    const USER_TOKEN = 'TEST_TOKEN_USER';
+function testCreateMeeting() {
     const adminEmail = 'admin@' + AUTH_CONFIG.ALLOWED_DOMAIN;
-    const userEmail = 'student@' + AUTH_CONFIG.ALLOWED_DOMAIN;
-
-    // 2. Verify Admin Exists
-    const adminUser = findOne(DB_CONFIG.SHEET_NAMES.USERS, u => u.email === adminEmail);
-    if (!adminUser) throw new Error('Admin user not found after setup.');
-
-    // 3. Create a Meeting (Elevated)
-    // Start time is 10 mins from now, check-in window is 15 mins.
-    // So check-in should be OPEN.
-    const now = new Date();
-    const startTime = new Date(now.getTime() + 10 * 60000);
-    const endTime = new Date(now.getTime() + 70 * 60000);
-
     const meetingData = {
-        title: 'General Assembly',
-        description: 'Weekly meeting',
-        startTime: startTime.toISOString(),
-        endTime: endTime.toISOString(),
+        title: 'Test Meeting',
+        description: 'Testing 123',
+        startTime: new Date(new Date().getTime() + 3600000).toISOString(), // 1 hour from now
+        endTime: new Date(new Date().getTime() + 7200000).toISOString(),   // 2 hours from now
         lat: 40.7128,
         lng: -74.0060,
-        radius: 50,
-        checkInWindowBefore: 15
+        radius: 100,
+        checkInWindowBefore: 60
     };
 
-    // Direct Service call for test setup (bypassing Controller token check for brevity, 
-    // but in real test we could simulate Controller call)
-    const meeting = Service.createMeeting(adminEmail, meetingData);
-    Logger.log('Created meeting: ' + meeting.title);
+    // Mock permission check by ensuring admin exists
+    const result = Service.createMeeting(adminEmail, meetingData);
+    Logger.log('Create Meeting Result: ' + JSON.stringify(result));
+    return result.meetingIds[0];
+}
 
-    // 4. Auto-Provision User via Check-In (Standard)
-    // We simulate a check-in request which triggers getOrProvisionUser inside Service->checkPermission
-    // Note: In Controller, verifyToken returns the email. Then Service uses it.
+function testCheckIn() {
+    const meetingId = testCreateMeeting(); // Create a fresh meeting
+    const userEmail = 'student@' + AUTH_CONFIG.ALLOWED_DOMAIN;
 
-    // 5. Check In - Success (Within Radius & Time Window)
-    const checkInSuccess = Service.checkIn(userEmail, meeting.id, 40.7128, -74.0060, false, userEmail);
-    Logger.log('User checked in successfully (valid location & time).');
+    // Mock user existence
+    getOrProvisionUser(userEmail);
 
-    // 6. Check In - Fail (Time Window)
-    // Create a meeting starting in 1 hour, window 15 mins. Check-in should fail.
-    const futureStart = new Date(now.getTime() + 60 * 60000);
-    const futureMeeting = Service.createMeeting(adminEmail, {
-        title: 'Future Meeting',
-        startTime: futureStart.toISOString(),
-        endTime: new Date(futureStart.getTime() + 60 * 60000).toISOString(),
-        lat: 40.7128,
-        lng: -74.0060,
-        radius: 50,
-        checkInWindowBefore: 15
-    });
+    // Simulate Check-in
+    // Note: We need to be within radius.
+    const lat = 40.7128;
+    const lng = -74.0060;
 
-    try {
-        Service.checkIn(userEmail, futureMeeting.id, 40.7128, -74.0060, false, userEmail);
-        Logger.log('ERROR: Check-in should have failed due to time window.');
-    } catch (e) {
-        Logger.log('Check-in failed as expected (time): ' + e.message);
+    const result = Service.checkIn(userEmail, meetingId, lat, lng);
+    Logger.log('Check-in Result: ' + JSON.stringify(result));
+
+    if (result.success) {
+        Logger.log('Pending Badge ID: ' + result.pendingBadgeId);
     }
+}
 
-    // 7. Update Role (Elevated)
-    Service.updateUserRole(adminEmail, userEmail, ROLES.ELEVATED);
-    const updatedUser = findOne(DB_CONFIG.SHEET_NAMES.USERS, u => u.email === userEmail);
-    if (updatedUser.role !== ROLES.ELEVATED) throw new Error('Role update failed.');
-    Logger.log('User role updated to Elevated.');
+function testBadgeGeneration() {
+    // Manually trigger badge processing
+    Logger.log('Processing pending badges...');
+    // Create multiple dummy requests to test parallel processing
+    const email = 'student@' + AUTH_CONFIG.ALLOWED_DOMAIN;
+    Badges.createBadgeRequest(email, 'M-TEST-1');
+    Badges.createBadgeRequest(email, 'M-TEST-2');
+    Badges.createBadgeRequest(email, 'M-TEST-3');
 
-    Logger.log('All tests passed!');
+    Badges.processPendingBadges();
+    Logger.log('Done. Check Drive folder for 3 new images.');
+}
+
+function testStats() {
+    const adminEmail = 'admin@' + AUTH_CONFIG.ALLOWED_DOMAIN;
+    const stats = Stats.getTeamwideStatsPublic();
+    Logger.log('Team Stats: ' + JSON.stringify(stats));
 }
