@@ -5,8 +5,12 @@
 
 function handleRequest(e) {
     try {
-        const action = e.parameter.action;
-        const payload = e.postData ? JSON.parse(e.postData.contents) : e.parameter;
+        if (!e.postData || !e.postData.contents) {
+            throw new Error('Invalid request: JSON body required.');
+        }
+
+        const payload = JSON.parse(e.postData.contents);
+        const action = payload.action;
 
         // Extract Token
         const token = payload.token;
