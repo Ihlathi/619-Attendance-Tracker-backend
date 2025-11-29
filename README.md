@@ -1,7 +1,7 @@
 # FRC Attendance Tracker Backend Documentation
 
 ## Overview
-This Google Apps Script (GAS) project serves as the backend for the Team 619's Attendance Tracker. It exposes a JSON API via `doPost` (handled in `Controller.js`) and interacts with a Google Sheet as its database. It includes features for user management, meeting scheduling, geolocation-based check-ins, badge generation (via Pollinations.ai), and statistics.
+This Google Apps Script (GAS) project serves as the backend for Team 619's Attendance Tracker. It exposes a JSON API via `doPost` (handled in `Controller.js`) and interacts with a Google Sheet as its database. It includes features for user management, meeting scheduling, geolocation-based check-ins, badge generation (via Pollinations.ai), and statistics.
 
 ## Architecture
 The project follows a layered architecture:
@@ -60,6 +60,7 @@ The database consists of the following sheets:
 *   `setUserSubteams` (Elevated): `{ email, subteams: [] }`
 *   `setUserPosition` (Elevated): `{ email, position }`
 *   `editUserMeta` (Admin): `{ email, fields: { displayName, createdAt } }`
+*   `getAllUsers` (Elevated/Admin): Returns list of all users.
 
 #### Meeting Management
 *   `createMeeting` (Elevated): `{ title, description, startTime, endTime, lat, lng, radius, checkInWindowBefore, recurring: { enabled, count } }`

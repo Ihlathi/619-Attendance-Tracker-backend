@@ -65,3 +65,10 @@ function testStats() {
     const stats = Stats.getTeamwideStatsPublic();
     Logger.log('Team Stats: ' + JSON.stringify(stats));
 }
+
+function testGetAllUsers() {
+    const adminEmail = 'admin@' + AUTH_CONFIG.ALLOWED_DOMAIN;
+    // Mocking permission check by ensuring admin exists in Setup
+    const result = Service.getAllUsers(adminEmail);
+    Logger.log('All Users: ' + JSON.stringify(result));
+}

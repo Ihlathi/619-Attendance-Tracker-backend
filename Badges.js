@@ -175,9 +175,7 @@ function getWordList() {
         const words = text.split('\n').filter(w => w.length > 0);
 
         // Cache it. Max size is 100KB. 10k words is ~70KB.
-        // If it's too big, we might need to slice it.
-        // Let's take top 5000 just to be safe if 10k is too big for cache entry.
-        // Actually, let's try full list, if it fails, fallback.
+        // If it's too big, we slice to 5000 words.
         try {
             cache.put('WORD_LIST', JSON.stringify(words), 21600); // 6 hours
         } catch (e) {

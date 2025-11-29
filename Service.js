@@ -46,13 +46,19 @@ const Service = {
         if (!checkPermission(requestorEmail, ROLES.ADMIN)) {
             throw new Error('Permission denied.');
         }
-        // Fields: displayName, createdAt
+        // Fields: displayName <- add more later if needed
         const updates = {};
         if (fields.displayName) updates.name = fields.displayName;
-        if (fields.createdAt) updates.createdAt = fields.createdAt;
 
         updateRow(DB_CONFIG.SHEET_NAMES.USERS, targetEmail, updates, 'email');
         return { success: true };
+    },
+
+    getAllUsers: function (requestorEmail) {
+        if (!checkPermission(requestorEmail, ROLES.ELEVATED)) {
+            throw new Error('Permission denied: Elevated or Admin role required.');
+        }
+        return { users: readAll(DB_CONFIG.SHEET_NAMES.USERS) };
     },
 
     // ====================================================
@@ -185,12 +191,7 @@ const Service = {
             const windowAfter = meeting.checkInWindowAfter || 5;
 
             const checkInStart = new Date(start.getTime() - (windowBefore * 60000));
-            const checkInEnd = new Date(start.getTime() + (windowAfter * 60000)); // "On time" window end?
-            // Actually usually check-in is allowed until meeting end, but "On Time" is limited.
-            // Spec says "checkInWindowAfter". Let's assume that defines "On Time".
-            // But check-in itself is allowed during the meeting?
-            // Spec: "Validate check-in window."
-            // Usually check-in is allowed until meeting ends.
+            const checkInEnd = new Date(start.getTime() + (windowAfter * 60000)); 
 
             if (now < checkInStart) throw new Error('Check-in not yet open.');
             if (now > end) throw new Error('Meeting has ended.');
@@ -231,11 +232,6 @@ const Service = {
 
         // Generate Badge Request
         const badgeId = Badges.createBadgeRequest(targetEmail, meetingId);
-
-        // Trigger Async Worker (If possible programmatically, else manual setup required)
-        // ScriptApp.newTrigger('processPendingBadges').timeBased().after(1000).create(); 
-        // Note: Creating triggers programmatically requires extra permissions and might hit quotas.
-        // Better to rely on a fixed 1-min trigger set up by Admin.
 
         return {
             success: true,
@@ -283,12 +279,6 @@ const Service = {
             approved: true
         };
         createRow(DB_CONFIG.SHEET_NAMES.EXCUSES, data);
-
-        // Also create a check-in record marked as excused?
-        // Spec says "CheckinsSheet: ... excused (bool)".
-        // Usually an excuse means they didn't attend but it doesn't count against them.
-        // Or it counts as attendance?
-        // Let's create a check-in record with excused=true.
 
         const checkInData = {
             id: 'C-' + Math.floor(Date.now() / 1000) + '-' + generateBase36(3),

@@ -35,6 +35,9 @@ function handleRequest(e) {
             case 'editUserMeta':
                 result = Service.editUserMeta(requestorEmail, payload.email, payload.fields);
                 break;
+            case 'getAllUsers':
+                result = Service.getAllUsers(requestorEmail);
+                break;
 
             // Meeting Management
             case 'createMeeting':
