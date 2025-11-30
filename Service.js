@@ -254,6 +254,8 @@ const Service = {
         return { success: true };
     },
 
+    // TODO: getExcuses (requestorEmail, status)
+
     excuseStudent: function (requestorEmail, meetingId, studentEmail, reason) {
         if (!checkPermission(requestorEmail, ROLES.ELEVATED)) throw new Error('Permission denied.');
 
