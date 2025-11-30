@@ -34,7 +34,11 @@ const Stats = {
         if (!user) throw new Error('User not found');
 
         const checkIns = readAll(DB_CONFIG.SHEET_NAMES.CHECKINS).filter(c => c.userEmail === email);
-        const totalMeetings = readAll(DB_CONFIG.SHEET_NAMES.MEETINGS).filter(m => m.status !== MEETING_STATUS.CANCELLED && new Date(m.endTime) < new Date()).length;
+        const totalMeetings = readAll(DB_CONFIG.SHEET_NAMES.MEETINGS).filter(m =>
+            m.status !== MEETING_STATUS.CANCELLED &&
+            new Date(m.endTime) < new Date() &&
+            new Date(m.endTime) >= new Date(user.createdAt)
+        ).length;
 
         const attended = checkIns.length;
         const onTime = checkIns.filter(c => c.wasOnTime === true || c.wasOnTime === 'true').length;
@@ -44,7 +48,7 @@ const Stats = {
         return {
             currentStreak: user.currentStreak || 0,
             longestStreak: user.longestStreak || 0,
-            totalMeetings: totalMeetings, // Approximate, ideally should filter by user eligibility
+            totalMeetings: totalMeetings, // filtered by not cancelled, future, or ended before user created
             attended: attended,
             onTime: onTime,
             badges: badges

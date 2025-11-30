@@ -32,9 +32,6 @@ function handleRequest(e) {
             case 'setUserPosition':
                 result = Service.setUserPosition(requestorEmail, payload.email, payload.position);
                 break;
-            case 'editUserMeta':
-                result = Service.editUserMeta(requestorEmail, payload.email, payload.fields);
-                break;
             case 'getAllUsers':
                 result = Service.getAllUsers(requestorEmail);
                 break;

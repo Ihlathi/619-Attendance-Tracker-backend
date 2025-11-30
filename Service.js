@@ -42,18 +42,6 @@ const Service = {
         return { success: true };
     },
 
-    editUserMeta: function (requestorEmail, targetEmail, fields) {
-        if (!checkPermission(requestorEmail, ROLES.ADMIN)) {
-            throw new Error('Permission denied.');
-        }
-        // Fields: displayName <- add more later if needed
-        const updates = {};
-        if (fields.displayName) updates.name = fields.displayName;
-
-        updateRow(DB_CONFIG.SHEET_NAMES.USERS, targetEmail, updates, 'email');
-        return { success: true };
-    },
-
     getAllUsers: function (requestorEmail) {
         if (!checkPermission(requestorEmail, ROLES.ELEVATED)) {
             throw new Error('Permission denied: Elevated or Admin role required.');
@@ -71,7 +59,7 @@ const Service = {
         }
 
         const meetings = [];
-        const baseId = Math.floor(new Date(meetingData.startTime).getTime() / 1000);
+        const baseId = Math.floor(new Date(meetingData.startTime).getTime() / 1000); // If you're wondering why two meetings have the same ID and it's breaking everything, you got really lucky. Congratulations. (0.002% or 300x more unlikely than getting a 5* on a random pull in genshin)
 
         // Handle recurring
         const count = (meetingData.recurring && meetingData.recurring.enabled) ? meetingData.recurring.count : 1;
@@ -114,9 +102,11 @@ const Service = {
 
         // If started, Admin only. Else Elevated.
         if (hasStarted) {
-            if (!checkPermission(requestorEmail, ROLES.ADMIN)) throw new Error('Permission denied: Meeting started, Admin only.');
+            if (!checkPermission(requestorEmail, ROLES.ADMIN))
+                throw new Error('Permission denied: Meeting started, Admin only.');
         } else {
-            if (!checkPermission(requestorEmail, ROLES.ELEVATED)) throw new Error('Permission denied.');
+            if (!checkPermission(requestorEmail, ROLES.ELEVATED))
+                throw new Error('Permission denied.');
         }
 
         updates.lastEdited = new Date().toISOString();
@@ -131,29 +121,28 @@ const Service = {
         const hasStarted = new Date(meeting.startTime) < new Date();
 
         if (hasStarted) {
-            if (!checkPermission(requestorEmail, ROLES.ADMIN)) throw new Error('Permission denied: Meeting started/past, Admin only.');
+            if (!checkPermission(requestorEmail, ROLES.ADMIN))
+                throw new Error('Permission denied: Meeting started/past, Admin only.');
         } else {
-            if (!checkPermission(requestorEmail, ROLES.ELEVATED)) throw new Error('Permission denied.');
+            if (!checkPermission(requestorEmail, ROLES.ELEVATED))
+                throw new Error('Permission denied.');
         }
 
         deleteRow(DB_CONFIG.SHEET_NAMES.MEETINGS, meetingId);
         return { success: true };
     },
 
-    getUpcomingMeetings: function (requestorEmail) {
+    getUpcomingMeetings: function (requestorEmail, numberOfMeetings) {
         // Returns active and future meetings
         const all = readAll(DB_CONFIG.SHEET_NAMES.MEETINGS);
         const now = new Date();
 
-        // Filter: Status not cancelled/archived AND (EndTime > Now OR StartTime > Now)
-        // Actually spec says "Returns both active and future meetings."
-        // Active means Now is between Start and End. Future means Start > Now.
-        // So effectively End > Now.
+        // Filter: Status not cancelled/archived AND (EndTime > Now), return numberOfMeetings requested
 
         const meetings = all.filter(m => {
             if (m.status === MEETING_STATUS.CANCELLED || m.status === MEETING_STATUS.ARCHIVED) return false;
             return new Date(m.endTime) > now;
-        });
+        }).slice(0, numberOfMeetings); // Return only numberOfMeetings
 
         return { meetings: meetings };
     },
@@ -191,7 +180,7 @@ const Service = {
             const windowAfter = meeting.checkInWindowAfter || 5;
 
             const checkInStart = new Date(start.getTime() - (windowBefore * 60000));
-            const checkInEnd = new Date(start.getTime() + (windowAfter * 60000)); 
+            const checkInEnd = new Date(start.getTime() + (windowAfter * 60000));
 
             if (now < checkInStart) throw new Error('Check-in not yet open.');
             if (now > end) throw new Error('Meeting has ended.');
@@ -219,7 +208,7 @@ const Service = {
         };
         createRow(DB_CONFIG.SHEET_NAMES.CHECKINS, checkInData);
 
-        // Update Streaks (Simplified logic)
+        // Update Streaks (Simplified logic) TODO: Allow streaks to be reset on missing non-excused meetings
         const user = getOrProvisionUser(targetEmail);
         let currentStreak = parseInt(user.currentStreak || 0) + 1;
         let longestStreak = parseInt(user.longestStreak || 0);
@@ -252,7 +241,7 @@ const Service = {
             email: requestorEmail,
             reason: reason,
             timestamp: new Date().toISOString(),
-            approved: '' // Pending
+            approved: 'pending'
         };
         createRow(DB_CONFIG.SHEET_NAMES.EXCUSES, data);
         return { success: true, excuseId: excuseId };
@@ -287,7 +276,7 @@ const Service = {
             timestamp: new Date().toISOString(),
             lat: '',
             lng: '',
-            status: 'valid', // or excused?
+            status: 'valid',
             wasOnTime: true,
             override: true,
             excused: true
