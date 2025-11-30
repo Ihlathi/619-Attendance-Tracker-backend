@@ -10,7 +10,7 @@ function doGet(e) {
 }
 
 function doPost(e) {
-  const result = handleRequest(body);
+  const result = handleRequest(e);
 
   return ContentService
     .createTextOutput(JSON.stringify(result))
